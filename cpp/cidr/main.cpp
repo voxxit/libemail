@@ -3,6 +3,13 @@
 #include <algorithm>
 #include <vector>
 
+// A struct of the upper and lower ranges of each cidr object
+// represented in its base types
+typedef struct {
+  IP::decimal_t l;
+  IP::decimal_t u;
+} cidr_pair_t;
+
 int main(void){
   try{
 
@@ -33,10 +40,30 @@ int main(void){
 	}
       }
     }
+
+    // Do the array stuff
+    cidr_pair_t* cp = new cidr_pair_t[ whitelist.size() ];
+    int j = 0;
+    for( std::vector<CIDR>::iterator i  = whitelist.begin();
+	 i != whitelist.end();
+	 i++ ){
+      cp[j].l = (*i).lower();
+      cp[j].u = (*i).upper();
+      j++;
+    }
+
   }
   catch( std::string &e ){
     std::cerr << e << std::endl;
   }
+
+  return 0;
+}
+
+// Generate a struct array of decimals, representing the upper
+// and lower ends of the CIDR ranges
+int createCidrArray( const std::vector< CIDR > & v ){
+  
 
   return 0;
 }
