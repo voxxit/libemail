@@ -1,6 +1,9 @@
-.PHONY=all clean
+.PHONY=all clean test
 
 all:	t
+
+test:	t
+	./t < ip.list
 
 clean:
 	rm *.o t
