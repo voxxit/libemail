@@ -3,12 +3,15 @@
 #include <string>
 
 class IP {
+public:
+  typedef unsigned int decimal_t;
 private:
-  unsigned int _decimal;
+  decimal_t _decimal;
 
 public:
   IP( const std::string & ip );
-  unsigned int decimal() const;
+  decimal_t decimal() const;
+
 
 };
 
