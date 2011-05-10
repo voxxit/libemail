@@ -136,6 +136,15 @@ int main( int argc, char ** argv ){
     work_data_t *work = (work_data_t*)malloc( sizeof( work_data_t ) );
     work->whitelist = cp;
 
+    // Iterate through the values, stopping either at count of
+    // units, or a value of 0
+    int k;
+    endptr = startptr;
+    for( k = 0; k < units; k++ ){
+      if( *endptr )
+	endptr++;
+    }
+
     work->start = startptr;
     work->end   = endptr;
     work->id    = i;
@@ -148,22 +157,11 @@ int main( int argc, char ** argv ){
 
     printf("Thread created, %d units left\n", unitsleft );
 
-    if( unitsleft > 0 ){
-      if( unitsleft < units ){
-	startptr = endptr + ( sizeof( unsigned long * ) );
-	endptr   = startptr + ( sizeof( unsigned long * ) * unitsleft );
-	unitsleft -= unitsleft;
-      }
-      else {
-	startptr = endptr + ( sizeof( unsigned long * ) );
-	endptr   = startptr + ( sizeof( unsigned long * ) * units );
-	unitsleft -= units;
-      }
+    if( *endptr ){
+      startptr = endptr;
+      startptr++;
     }
-    else {
-      i = nthreads+1;
-      continue;
-    }
+
     printf("Delta: %d\n", ( endptr - startptr ) / sizeof( unsigned long *));
     
   }
