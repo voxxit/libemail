@@ -33,7 +33,7 @@ void * thread_start( void * arg ){
   printf("%d\tFirst unit of work at %p\t", work->id, (void *)ip );
   printf("%d\tLast  unit of work at %p\n", work->id, (void *)work->end );
 
-  while( ip ){
+  while( ip && *ip ){
     /* Check if this guy is in the CIDR whitelists */
     /* For now, just check against the first CIDR range... */
     printf("%d\t%p\n", work->id, ip);
@@ -119,7 +119,9 @@ int main( int argc, char ** argv ){
   printf("Units of work per thread: %d\n", units );
 
   unsigned long * startptr = ipArray;
-  unsigned long * endptr   = startptr + (units-1) ;
+  unsigned long * endptr   = startptr + (units * sizeof( unsigned long *)) ;
+
+  printf("Delta: %d\n", ( endptr - startptr ) / sizeof( unsigned long *));
 
   int unitsleft = nips - units;
 
@@ -158,6 +160,12 @@ int main( int argc, char ** argv ){
 	unitsleft -= units;
       }
     }
+    else {
+      i = nthreads+1;
+      continue;
+    }
+    printf("Delta: %d\n", ( endptr - startptr ) / sizeof( unsigned long *));
+    
   }
 
   pthread_attr_destroy(&attr);
