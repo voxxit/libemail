@@ -5,6 +5,7 @@
 // parse the data, and re-format the data structures
 // into arrays of elemental types for distributed
 // processing.
+#include "utility.hpp"
 #include "cidr.hpp"
 #include "utility.hpp"
 #include <iostream>

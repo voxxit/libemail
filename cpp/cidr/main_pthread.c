@@ -46,6 +46,15 @@ void * thread_start( void * arg ){
     ip_addr.s_addr = htonl(*ip);
 
     printf( "%d\tLooking up ip: %s => %u\n", work->id, inet_ntoa( ip_addr ), *ip);
+
+    c = work->whitelist;
+
+    while( (*c).u && (*c).l ){
+      if( *ip >= (*c).l )
+	if( *ip <= (*c).u )
+	  printf( "WHITELIST: %s\n", inet_ntoa( ip_addr ) );
+      c++;
+    }
    
     if( ip == work->end ){
       printf( "QUITING TIME\n");
