@@ -14,8 +14,10 @@
 #include <algorithm>
 #include <memory.h>
 
-int readIPsFromStdIn( unsigned long * ipArray ){
+unsigned long * readIPsFromStdIn( int * nips ){
   std::vector< IP > v;
+
+  *nips = 0;
 
   try {
 
@@ -26,29 +28,38 @@ int readIPsFromStdIn( unsigned long * ipArray ){
       if( strIP.size() == 0 )
 	continue;
 
-      v.push_back( IP( strIP ) );
+      IP i( strIP );
+      std::cout << "Adding IP " << strIP << "\t" << i.decimal() << std::endl;
+      v.push_back( i );
     
     }
   }
   catch( std::string & e ){
     std::cerr << "Exception: " << e << std::endl;
-    return -1;
+    return NULL;
   }
 
+  unsigned long *ipArray;
   if( v.size() > 0 ){
     int j = 0;
-    ipArray = new unsigned long [ v.size() ];
+    ipArray = (unsigned long *)malloc( sizeof(unsigned long)*v.size() + 1 );
+    std::cout << "Created array at " << ipArray << std::endl;
+    memset( ipArray, sizeof( unsigned long ) * v.size() + 1, 0 );
 
     for( std::vector< IP >::iterator i = v.begin();
 	 i != v.end();
 	 i++ ){
       ipArray[j] = (unsigned long)((*i).decimal());
+      std::cout << "Copied " << ipArray[j] << " to array[" << j << "] " << &ipArray[j] << std::endl;
+      j++;
     }
   }
   else
-    return -1;
+    return NULL;
 
-  return v.size();
+  *nips = v.size();
+  std::cout << "Returning pointer " << ipArray << std::endl;
+  return ipArray;
 }
 
 cidr_pair_t* readCIDRFromFile( const char * filename ){

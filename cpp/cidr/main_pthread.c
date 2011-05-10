@@ -53,10 +53,19 @@ void * thread_start( void * arg ){
       break;
     }
 
-    ip += sizeof( unsigned long *);
+    ip++;
 
   }
   return NULL;
+}
+
+void printIPArray( unsigned long * ipArray ){
+  return;
+  unsigned long * ip = ipArray;
+  while( ip ){
+    printf( "%u\n", *ip );
+    ip++;
+  }
 }
 
 int main( int argc, char ** argv ){
@@ -83,9 +92,12 @@ int main( int argc, char ** argv ){
 
   cidr_pair_t * cp = NULL;
   unsigned long *ipArray;
+  int nips;
 
   cp = readCIDRFromFile( filename );
-  int nips = readIPsFromStdIn( ipArray );
+  ipArray = readIPsFromStdIn( &nips );
+
+  printIPArray(ipArray);
 
   printf("Whitelist start address is: %x\n", (void *)cp );
 
@@ -107,7 +119,7 @@ int main( int argc, char ** argv ){
   printf("Units of work per thread: %d\n", units );
 
   unsigned long * startptr = ipArray;
-  unsigned long * endptr   = startptr + ( sizeof( unsigned long ) * units );
+  unsigned long * endptr   = startptr + (units-1) ;
 
   int unitsleft = nips - units;
 
@@ -126,7 +138,6 @@ int main( int argc, char ** argv ){
     work->end   = endptr;
     work->id    = i;
     
-
     rc = pthread_create( &threadid,
 			 &attr,
 			 &thread_start,

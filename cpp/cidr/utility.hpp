@@ -15,7 +15,7 @@ extern "C" {
 
 #include <stdlib.h>
 
-  int readIPsFromStdIn( unsigned long * ipArray );
+  unsigned long * readIPsFromStdIn(int*);
   cidr_pair_t * readCIDRFromFile( const char * filename );
 
 #ifdef __cplusplus
