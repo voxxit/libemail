@@ -48,3 +48,11 @@ bool CIDR::in( const IP & ip ){
       return true;
   return false;
 }
+
+IP::decimal_t CIDR::lower() const {
+  return _lower;
+}
+
+IP::decimal_t CIDR::upper() const {
+  return _upper;
+}

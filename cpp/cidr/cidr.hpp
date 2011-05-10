@@ -8,12 +8,16 @@
 class CIDR
 {
 private:
-  unsigned int _lower;
-  unsigned int _upper;
+  IP::decimal_t _lower;
+  IP::decimal_t _upper;
 
   public:
   CIDR( const std::string & cidr );
   bool in( const IP &);
+
+  IP::decimal_t lower() const;
+  IP::decimal_t upper() const;
+
 };
 
 #endif
