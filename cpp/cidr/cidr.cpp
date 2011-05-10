@@ -40,9 +40,9 @@ CIDR::CIDR( const std::string & cidr ){
   // std::cout << "Upper: " << _upper << std::endl;
 }
 
-bool CIDR::in( const IP & ip ){
+bool CIDR::in( const IP & ip ) const {
   IP i( ip );
-  unsigned int id = i.decimal();
+  IP::decimal_t id = i.decimal();
   if( ( id <= _upper ) )
     if( ( id >= _lower ))
       return true;

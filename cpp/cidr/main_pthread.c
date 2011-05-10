@@ -13,6 +13,52 @@
 
 #include "utility.hpp"
 
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+
+typedef struct {
+  cidr_pair_t * whitelist;
+  unsigned long * start;
+  unsigned long * end;
+  int id;
+} work_data_t;
+
+void * thread_start( void * arg ){
+  work_data_t * work = (work_data_t *)arg;
+  unsigned long * ip = work->start;
+  
+  printf("%d\tFirst unit of work at %p\t", work->id, (void *)ip );
+  printf("%d\tLast  unit of work at %p\n", work->id, (void *)work->end );
+
+  while( ip ){
+    /* Check if this guy is in the CIDR whitelists */
+    /* For now, just check against the first CIDR range... */
+    printf("%d\t%p\n", work->id, ip);
+
+    /* iterate through the CIDR whitelist */
+    cidr_pair_t *c;
+    struct in_addr in_l, in_u;
+
+    struct in_addr ip_addr;
+    ip_addr.s_addr = htonl(*ip);
+
+    printf( "%d\tLooking up ip: %s => %u\n", work->id, inet_ntoa( ip_addr ), *ip);
+   
+    if( ip == work->end ){
+      printf( "QUITING TIME\n");
+      ip = NULL;
+      break;
+    }
+
+    ip += sizeof( unsigned long *);
+
+  }
+  return NULL;
+}
+
 int main( int argc, char ** argv ){
 
   /* Call the initializer function, which will
@@ -21,18 +67,98 @@ int main( int argc, char ** argv ){
    * each unsigned integer within the data struct
    */
   char * filename = NULL;
+  int nthreads = 1;
+
   if( argc < 2 ){
-    //perror( "You must supply a filename as a CIDR whitelist input" );
+    perror( "You must supply a filename as a CIDR whitelist input" );
     filename = "whitelist";
   }
   else {
     filename = argv[1];
   }
 
-  cidr_pair_t * cp = NULL;
-  readCIDRFromFile( filename, cp );
+  if( argc >= 2 ){
+    nthreads = atoi( argv[2] );
+  }
 
-  printf("Done reading into cp\n");
+  cidr_pair_t * cp = NULL;
+  unsigned long *ipArray;
+
+  cp = readCIDRFromFile( filename );
+  int nips = readIPsFromStdIn( ipArray );
+
+  printf("Whitelist start address is: %x\n", (void *)cp );
+
+  pthread_attr_t attr;
+
+  int rc = pthread_attr_init(&attr);
+
+  if ( rc != 0 )
+    perror("pthread_attr_init");
+
+  int i;
+  pthread_t threadid;
+  pthread_t *threads = (pthread_t *)malloc( sizeof(pthread_t) * nthreads );
+
+  int units = (int)nips / (int)nthreads;
+
+  printf("Number of worker threads: %d\n", nthreads );
+  printf("Number of IPs to work on: %d\n", nips );
+  printf("Units of work per thread: %d\n", units );
+
+  unsigned long * startptr = ipArray;
+  unsigned long * endptr   = startptr + ( sizeof( unsigned long ) * units );
+
+  int unitsleft = nips - units;
+
+  for( i = 0; i < nthreads; i++ ){
+    /* We need to split the data up into equal chunks across
+     * the number of threads. Create a datastructure for each
+     * thread, and pass in the pointer to the start piece of
+     * work, and the end piece of work, and a pointer to the
+     * whitelist CIDR pair structure.
+     */
+
+    work_data_t *work = (work_data_t*)malloc( sizeof( work_data_t ) );
+    work->whitelist = cp;
+
+    work->start = startptr;
+    work->end   = endptr;
+    work->id    = i;
+    
+
+    rc = pthread_create( &threadid,
+			 &attr,
+			 &thread_start,
+			 work );
+    threads[i] = threadid;
+
+    printf("Thread created, %d units left\n", unitsleft );
+
+    if( unitsleft > 0 ){
+      if( unitsleft < units ){
+	startptr = endptr + ( sizeof( unsigned long * ) );
+	endptr   = startptr + ( sizeof( unsigned long * ) * unitsleft );
+	unitsleft -= unitsleft;
+      }
+      else {
+	startptr = endptr + ( sizeof( unsigned long * ) );
+	endptr   = startptr + ( sizeof( unsigned long * ) * units );
+	unitsleft -= units;
+      }
+    }
+  }
+
+  pthread_attr_destroy(&attr);
+
+  /* wait for ALL of the work to complete */
+  
+  for( i = 0; i < nthreads; i++ ){
+    pthread_join(threads[i], NULL);
+    printf("Joined a thread\n");
+  }
+
+  printf("All threads joined\n");
 
   return 0;
 }

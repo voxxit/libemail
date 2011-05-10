@@ -13,7 +13,7 @@ private:
 
   public:
   CIDR( const std::string & cidr );
-  bool in( const IP &);
+  bool in( const IP &) const;
 
   IP::decimal_t lower() const;
   IP::decimal_t upper() const;

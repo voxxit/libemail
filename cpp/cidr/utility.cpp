@@ -12,8 +12,9 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <memory.h>
 
-int readIPsFromStdIn( unsigned int * ipArray ){
+int readIPsFromStdIn( unsigned long * ipArray ){
   std::vector< IP > v;
 
   try {
@@ -36,28 +37,29 @@ int readIPsFromStdIn( unsigned int * ipArray ){
 
   if( v.size() > 0 ){
     int j = 0;
-    ipArray = new unsigned int [ v.size() ];
+    ipArray = new unsigned long [ v.size() ];
 
     for( std::vector< IP >::iterator i = v.begin();
 	 i != v.end();
 	 i++ ){
-      ipArray[j] = (*i).decimal();
+      ipArray[j] = (unsigned long)((*i).decimal());
     }
   }
   else
     return -1;
 
-  return 0;
+  return v.size();
 }
 
-int readCIDRFromFile( const char * filename, cidr_pair_t * cp ){
+cidr_pair_t* readCIDRFromFile( const char * filename ){
   std::vector< CIDR > v;
   std::ifstream ifs ( filename, std::ifstream::in );
   char line[255];
   int count = 0;
+  cidr_pair_t * cp;
 
   if( ! ifs.is_open() )
-    return -1;
+    return NULL;
 
   while (ifs.good()){
     ifs.getline( line, 254 );
@@ -81,7 +83,10 @@ int readCIDRFromFile( const char * filename, cidr_pair_t * cp ){
   
   if( v.size() > 0 ){
     // Ugh, use malloc, as it may have to be free()'d by a C program
-    cp = (cidr_pair_t *)malloc( sizeof(cidr_pair_t) * v.size() );
+    cp = (cidr_pair_t *)malloc( sizeof(cidr_pair_t) * v.size() + 1 );
+    printf("CIDR Pair address: %p\n", (void *)cp );
+    memset( cp, sizeof( cidr_pair_t ) * v.size() + 1, 0 );
+
     int j = 0;
     for( std::vector<CIDR>::iterator i = v.begin();
          i != v.end();
@@ -95,5 +100,5 @@ int readCIDRFromFile( const char * filename, cidr_pair_t * cp ){
   std::cout << "Done. Returning" << std::endl;
   ifs.close();
 
-  return 0;
+  return cp;
 }

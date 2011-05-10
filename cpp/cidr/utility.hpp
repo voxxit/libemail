@@ -5,8 +5,8 @@
 
   // Struct for containing native datatype of CIDR
   typedef struct {
-    unsigned int u;
-    unsigned int l;
+    unsigned long u;
+    unsigned long l;
   } cidr_pair_t;
 
 #ifdef __cplusplus
@@ -15,8 +15,8 @@ extern "C" {
 
 #include <stdlib.h>
 
-  int readIPsFromStdIn( unsigned int * ipArray );
-  int readCIDRFromFile( const char * filename, cidr_pair_t * cp );
+  int readIPsFromStdIn( unsigned long * ipArray );
+  cidr_pair_t * readCIDRFromFile( const char * filename );
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

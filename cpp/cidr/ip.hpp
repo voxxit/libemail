@@ -4,7 +4,7 @@
 
 class IP {
 public:
-  typedef unsigned int decimal_t;
+  typedef unsigned long decimal_t;
 private:
   decimal_t _decimal;
 
