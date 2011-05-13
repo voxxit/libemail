@@ -8,8 +8,8 @@ test:	t
 clean:
 	rm -f *.o t t.pthread
 
-t:	main.o cidr.o ip.o
-	g++ main.o cidr.o ip.o -o t
+t:	main.o cidr.o ip.o utility.o
+	g++ main.o cidr.o ip.o utility.o -o t
 
 ip.o:	ip.cpp
 	g++ -g -c ip.cpp

@@ -1,15 +1,9 @@
 #include "cidr.hpp"
+#include "utility.hpp"
 #include <iostream>
 #include <fstream>
 #include <algorithm>
 #include <vector>
-
-// A struct of the upper and lower ranges of each cidr object
-// represented in its base types
-typedef struct {
-  IP::decimal_t l;
-  IP::decimal_t u;
-} cidr_pair_t;
 
 // Forward decl
 static int createCidrArray( const std::vector< CIDR > & v, cidr_pair_t * cp );
@@ -33,6 +27,7 @@ int main(int argc, char **argv){
     }
     ifs.close();
 
+#if 0
     while( std::cin ){
   
       std::string strIP;			  
@@ -53,24 +48,53 @@ int main(int argc, char **argv){
 	}
       }
     }
+#endif 
 
   }
   catch( std::string &e ){
     std::cerr << e << std::endl;
   }
 
-  // Create an array from our fancy OO objects :)
-  cidr_pair_t *cp;
+  std::vector< IP::decimal_t > v;
+  try {
+    while( std::cin ){
+      std::string strIP;
+      std::cin >> strIP;
 
-  if( createCidrArray( whitelist, cp ) != 0 ){
-    // Problems
-    std::cerr << "ERR: problem with createCidrArray fn"
-              << std::endl;
-    exit(1);
+      if( strIP.size() == 0 )
+	continue;
+
+      IP i( strIP );
+      v.push_back( i.decimal() );
+    }
+    std::sort( v.begin(), v.end() );
+  }
+  catch( std::string & e ){
+    std::cerr << "Exception: " << e << std::endl;
+    return NULL;
   }
 
   std::cout << "Created array for subsequent work.."
             << std::endl;
+
+  // We have a sorted array of unsigned long.  Go through
+  // each whitelist, and find all IPs within its bounds
+
+  for( std::vector< CIDR >::iterator i = whitelist.begin();
+       i != whitelist.end();
+       i++ ){
+    IP::decimal_t lower = (*i).lower();
+    IP::decimal_t upper = (*i).upper();
+
+    // Find 
+    std::vector< IP::decimal_t >::iterator lb = std::lower_bound( v.begin(), v.end(), lower );
+    std::vector< IP::decimal_t >::iterator ub = std::upper_bound( v.begin(), v.end(), upper );
+    for( std::vector< IP::decimal_t >::iterator ii = lb;
+	 ii != ub;
+	 ii++ ){
+      std::cout << "Whitelisted: " << (*ii) << std::endl;
+    }
+  }
 
   return 0;
 }

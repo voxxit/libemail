@@ -32,8 +32,8 @@ unsigned long * readIPsFromStdIn( int * nips ){
       IP i( strIP );
       //std::cout << "Adding IP " << strIP << "\t" << i.decimal() << std::endl;
       v.push_back( i );
-    
     }
+    std::sort( v.begin(), v.end() );
   }
   catch( std::string & e ){
     std::cerr << "Exception: " << e << std::endl;
