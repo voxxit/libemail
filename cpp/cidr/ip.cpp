@@ -3,6 +3,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+IP::IP( decimal_t d ):_decimal( d ){ };
+
 IP::IP( const std::string & ip )
   :_decimal(0)
 {
@@ -13,4 +15,10 @@ IP::IP( const std::string & ip )
 
 IP::decimal_t IP::decimal() const {
   return _decimal;
+}
+
+const char * IP::str() const{
+  struct in_addr addr;
+  addr.s_addr = htonl( _decimal );
+  return inet_ntoa(addr);
 }

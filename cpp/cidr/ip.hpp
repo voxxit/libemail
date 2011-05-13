@@ -10,9 +10,12 @@ private:
 
 public:
   IP( const std::string & ip );
+  IP( decimal_t d );
   decimal_t decimal() const;
 
   bool operator <  (const IP & rhs) const { return ( _decimal  < rhs._decimal);};
+
+  const char * str() const;
 
 };
 

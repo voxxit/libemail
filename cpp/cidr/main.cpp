@@ -8,6 +8,11 @@
 // Forward decl
 static int createCidrArray( const std::vector< CIDR > & v, cidr_pair_t * cp );
 
+void print_whitelisted( IP::decimal_t & whitelisted ){
+  IP i(whitelisted);
+  std::cout << "Whitelisted: " << i.str() << std::endl;
+}
+
 int main(int argc, char **argv){
 
   std::vector< CIDR > whitelist;
@@ -89,11 +94,8 @@ int main(int argc, char **argv){
     // Find 
     std::vector< IP::decimal_t >::iterator lb = std::lower_bound( v.begin(), v.end(), lower );
     std::vector< IP::decimal_t >::iterator ub = std::upper_bound( v.begin(), v.end(), upper );
-    for( std::vector< IP::decimal_t >::iterator ii = lb;
-	 ii != ub;
-	 ii++ ){
-      std::cout << "Whitelisted: " << (*ii) << std::endl;
-    }
+
+    std::for_each( lb, ub, print_whitelisted );
   }
 
   return 0;
