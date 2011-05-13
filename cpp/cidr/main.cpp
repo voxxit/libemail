@@ -32,29 +32,6 @@ int main(int argc, char **argv){
     }
     ifs.close();
 
-#if 0
-    while( std::cin ){
-  
-      std::string strIP;			  
-      std::cin >> strIP;
-
-      if( strIP.size() == 0 )
-	continue;
-
-      //std::cout << "Processing " << strIP << std::endl;
-
-      // Create an iterator
-      std::vector< CIDR >::iterator i = whitelist.begin();
-
-      for( ; i != whitelist.end(); i++ ){
-	if( (*i).in( IP( strIP ) ) ){
-	  std::cout << "IP " << strIP << " is whitelisted" << std::endl;
-	  break;
-	}
-      }
-    }
-#endif 
-
   }
   catch( std::string &e ){
     std::cerr << e << std::endl;
