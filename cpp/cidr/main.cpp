@@ -1,5 +1,6 @@
 #include "cidr.hpp"
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 #include <vector>
 
@@ -13,16 +14,24 @@ typedef struct {
 // Forward decl
 static int createCidrArray( const std::vector< CIDR > & v, cidr_pair_t * cp );
 
-int main(void){
+int main(int argc, char **argv){
 
   std::vector< CIDR > whitelist;
 
   try{
+    std::ifstream ifs ( argv[1], std::ifstream::in );
 
-    whitelist.push_back( CIDR ( "192.168.3.0/24" ) );
-    whitelist.push_back( CIDR ( "192.168.6.0/24" ) );
-    whitelist.push_back( CIDR ( "192.168.9.0/24" ) );
-    whitelist.push_back( CIDR ( "192.168.22.0/24" ) );
+    while( ifs.good() ){
+       char l[255];
+       ifs.getline( l, 254 );
+       std::string sline( l );
+
+       if( sline.size() < 1 )
+         continue;
+       
+       whitelist.push_back( CIDR( sline ) );
+    }
+    ifs.close();
 
     while( std::cin ){
   
@@ -32,7 +41,7 @@ int main(void){
       if( strIP.size() == 0 )
 	continue;
 
-      std::cout << "Processing " << strIP << std::endl;
+      //std::cout << "Processing " << strIP << std::endl;
 
       // Create an iterator
       std::vector< CIDR >::iterator i = whitelist.begin();

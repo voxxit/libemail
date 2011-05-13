@@ -36,7 +36,9 @@ void * thread_start( void * arg ){
   while( ip && *ip ){
     /* Check if this guy is in the CIDR whitelists */
     /* For now, just check against the first CIDR range... */
+#ifdef DEBUG
     printf("%d\t%p\n", work->id, ip);
+#endif
 
     /* iterate through the CIDR whitelist */
     cidr_pair_t *c;
@@ -45,7 +47,7 @@ void * thread_start( void * arg ){
     struct in_addr ip_addr;
     ip_addr.s_addr = htonl(*ip);
 
-    printf( "%d\tLooking up ip: %s => %u\n", work->id, inet_ntoa( ip_addr ), *ip);
+    //printf( "%d\tLooking up ip: %s => %u\n", work->id, inet_ntoa( ip_addr ), *ip);
 
     c = work->whitelist;
 
@@ -121,7 +123,7 @@ int main( int argc, char ** argv ){
   pthread_t threadid;
   pthread_t *threads = (pthread_t *)malloc( sizeof(pthread_t) * nthreads );
 
-  int units = (int)nips / (int)nthreads;
+  int units = nips / nthreads;
 
   printf("Number of worker threads: %d\n", nthreads );
   printf("Number of IPs to work on: %d\n", nips );
@@ -150,8 +152,10 @@ int main( int argc, char ** argv ){
     int k;
     endptr = startptr;
     for( k = 0; k < units; k++ ){
-      if( *endptr )
+      if( *endptr ){
 	endptr++;
+	unitsleft--;
+      }
     }
 
     work->start = startptr;
@@ -164,7 +168,7 @@ int main( int argc, char ** argv ){
 			 work );
     threads[i] = threadid;
 
-    printf("Thread created, %d units left\n", unitsleft );
+    printf("Thread created, %d units left\n", (unitsleft < 0? 0 : unitsleft) );
 
     if( *endptr ){
       startptr = endptr;

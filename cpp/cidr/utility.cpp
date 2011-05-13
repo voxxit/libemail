@@ -30,7 +30,7 @@ unsigned long * readIPsFromStdIn( int * nips ){
 	continue;
 
       IP i( strIP );
-      std::cout << "Adding IP " << strIP << "\t" << i.decimal() << std::endl;
+      //std::cout << "Adding IP " << strIP << "\t" << i.decimal() << std::endl;
       v.push_back( i );
     
     }
@@ -51,7 +51,7 @@ unsigned long * readIPsFromStdIn( int * nips ){
 	 i != v.end();
 	 i++ ){
       ipArray[j] = (unsigned long)((*i).decimal());
-      std::cout << "Copied " << ipArray[j] << " to array[" << j << "] " << &ipArray[j] << std::endl;
+      //std::cout << "Copied " << ipArray[j] << " to array[" << j << "] " << &ipArray[j] << std::endl;
       j++;
     }
   }
