@@ -33,9 +33,13 @@ boost::interprocess::interprocess_semaphore sem_(0);
 
 #include "postfix_policy.hpp"
 
-class ConnectionHandler {
+int handler_number = 0;
+
+class ConnectionHandler{
 private:
+
   int fd_;
+  int handler_num_;
 
   bool validate_socket(){
     char b;
@@ -43,12 +47,13 @@ private:
     return valid > 0;
   }
 public:
+  ConnectionHandler():handler_num_(++handler_number){ };
   void h() {
     while (1) {
       sem_.wait();
       if (1) {
 	boost::mutex::scoped_lock scoped_lock(mutex_);
-	std::cout << "Getting FD from vector" << std::endl;
+	std::cout << "[" << handler_num_ << "] Getting FD from vector" << std::endl;
 	if (socket_queue_.size() > 0) {
 	  fd_ = socket_queue_.front();
 	  socket_queue_.pop();
@@ -56,8 +61,12 @@ public:
 	  fd_ = 0;
       }
       if (fd_) {
-	if(! validate_socket() )
+	if(! validate_socket() ){
+	  std::cerr << "Closing socket" << std::endl;
+	  close( fd_ );
+	  shutdown( fd_, 2 );
 	  continue;
+	}
 	
 	PostfixPolicy pf( fd_ );
 	std::string line = pf.read_request();
@@ -105,7 +114,7 @@ create_sock()
 int
 main()
 {
-#define MAX_EVENTS 1000
+#define MAX_EVENTS 10000
   struct epoll_event
     ev,
     events[MAX_EVENTS];
