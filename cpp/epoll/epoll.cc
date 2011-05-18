@@ -187,7 +187,13 @@ main()
 	  exit(EXIT_FAILURE);
 	}
       } else {
-	if (events[n].events & EPOLLIN == EPOLLIN) {
+	char b;
+	if( recv( events[n].data.fd, &b, 1, MSG_PEEK | MSG_DONTWAIT) == 0 ){
+	  std::cerr << "Closing socket: " << events[n].data.fd << std::endl;
+	  close(  events[n].data.fd );
+	  epoll_ctl(epollfd, EPOLL_CTL_DEL, events[n].data.fd, NULL);
+	}
+	else if (events[n].events & EPOLLIN == EPOLLIN) {
 	  std::cout << "EPOLLIN..." << std::endl;
 	  // Remove this socket from the 
 	  epoll_ctl(epollfd, EPOLL_CTL_DEL, events[n].data.fd, NULL);
