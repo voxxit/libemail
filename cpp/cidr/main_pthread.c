@@ -74,7 +74,7 @@ void printIPArray( unsigned long * ipArray ){
   return;
   unsigned long * ip = ipArray;
   while( ip ){
-    printf( "%u\n", *ip );
+    printf( "%lu\n", *ip );
     ip++;
   }
 }
@@ -110,7 +110,7 @@ int main( int argc, char ** argv ){
 
   printIPArray(ipArray);
 
-  printf("Whitelist start address is: %x\n", (void *)cp );
+  printf("Whitelist start address is: %p\n", (void *)cp );
 
   pthread_attr_t attr;
 
