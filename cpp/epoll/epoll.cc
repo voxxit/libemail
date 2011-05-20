@@ -83,15 +83,22 @@ static bool hasEnding (std::string const &fullString, std::string const &ending)
     return false;
 }
 
-std::string read_from_socket( int fd, std::string until = "\r\n"  ){
+std::string read_from_socket( int fd, int * total_read, std::string until = "\r\n"  ){
   std::string buffer;
   char b[2];
   b[1] = '\0';
   int nread;
-  while ( nread = read( fd, b, 1 ) ){
-    std::cout << "Read [" << b << "]" << std::endl;
-    buffer.append( b );
-    if( hasEnding( buffer, until ) )
+  *total_read = 0;
+  while (1){
+    nread = read( fd, b, 1 );
+    *total_read = nread;
+    if( nread > 0 ){
+      std::cout << "Read [" << b << "]" << std::endl;
+      buffer.append( b );
+      if( hasEnding( buffer, until ) )
+	return buffer;
+    }
+    else
       return buffer;
   }
   return buffer;
@@ -115,6 +122,10 @@ create_sock()
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0)
     perror("ERROR opening socket");
+
+  int on = 1;
+  setsockopt( sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on) );
+
   bzero((char *) &serv_addr, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
   serv_addr.sin_addr.s_addr = INADDR_ANY;
@@ -208,7 +219,18 @@ main()
       } else {	
 	// Read whatever is in the socket, and if it's a complete line, then
 	// pass it to a worker thread to do something with it.
-	std::string some_input = read_from_socket( events[n].data.fd );
+	int nread;
+	std::string some_input = read_from_socket( events[n].data.fd, &nread );
+	if( nread == 0 ){
+	  std::cout << "Socket closed: " << events[n].data.fd << std::endl;
+	  epoll_ctl( epollfd, EPOLL_CTL_DEL, events[n].data.fd, &ev );
+	  
+	  boost::mutex::scoped_lock scoped_lock(mutex_);
+	  std::map< int, std::string >::iterator i = pending_data.find( events[n].data.fd );
+	  pending_data.erase( i );
+	  close( events[n].data.fd );
+	  continue;
+	}
 
 	std::cout << "Read: [" << some_input << "]" << std::endl;
 
@@ -217,7 +239,7 @@ main()
 	std::cout << "Data so far: [" << str_ref << "]" << std::endl;
 
 
-	if( some_input.compare("\r\n") == 0 ){
+	if( hasEnding( pending_data[ events[n].data.fd ] , "\r\n\r\n" ) ){
 	  std::cout << "End of data!!" << std::endl;
 	  boost::mutex::scoped_lock scoped_lock(mutex_);
 	  struct message m;
@@ -225,8 +247,8 @@ main()
 	  m.msg = std::string( pending_data[ events[n].data.fd ] );
 	  message_queue_.push( m );
 
-	  // TODO: Replace with a call to erase.
-	  pending_data[ events[n].data.fd ] = "";
+	  std::map< int, std::string >::iterator i = pending_data.find( events[n].data.fd );
+	  pending_data.erase( i );
 	 
 	  std::cout << "Posting semaphore" << std::endl;
 	  sem_.post();
