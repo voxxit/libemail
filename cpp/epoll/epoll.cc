@@ -23,7 +23,14 @@
 #include <boost/thread.hpp>
 
 #include <queue>
+#include <map>
 
+struct message {
+  int fd;
+  std::string msg;
+};
+
+std::queue < struct message > message_queue_;
 std::queue < int > socket_queue_;
 std::queue < int > poll_queue_;
 boost::interprocess::interprocess_condition cond_;
@@ -50,36 +57,45 @@ public:
   ConnectionHandler():handler_num_(++handler_number){ };
   void h() {
     while (1) {
+      message m;
       sem_.wait();
       if (1) {
 	boost::mutex::scoped_lock scoped_lock(mutex_);
 	std::cout << "[" << handler_num_ << "] Getting FD from vector" << std::endl;
-	if (socket_queue_.size() > 0) {
-	  fd_ = socket_queue_.front();
-	  socket_queue_.pop();
+	if (message_queue_.size() > 0) {
+	  m = message_queue_.front();
+	  fd_ = m.fd;
 	} else
 	  fd_ = 0;
       }
       if (fd_) {
-	if(! validate_socket() ){
-	  std::cerr << "Closing socket" << std::endl;
-	  close( fd_ );
-	  shutdown( fd_, 2 );
-	  continue;
-	}
-	
-	PostfixPolicy pf( fd_ );
-	std::string line = pf.read_request();
-	std::cout << "Read: " << line << std::endl;
-      
-	// Return
-	boost::mutex::scoped_lock scoped_lock(poll_mutex_);
-	std::cout << "Returning FD to the epoll thing"  << std::endl;
-	poll_queue_.push(fd_);
+	std::cout << "We would pass the string to the appropriate handler here" << std::endl;
+	std::cout << "Message [" << m.msg << "]" << std::endl;
       }
     }
   };
 };
+
+static bool hasEnding (std::string const &fullString, std::string const &ending)
+{
+    if (fullString.length() > ending.length())
+        return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
+    return false;
+}
+
+std::string read_from_socket( int fd, std::string until = "\r\n"  ){
+  std::string buffer;
+  char b[2];
+  b[1] = '\0';
+  int nread;
+  while ( nread = read( fd, b, 1 ) ){
+    std::cout << "Read [" << b << "]" << std::endl;
+    buffer.append( b );
+    if( hasEnding( buffer, until ) )
+      return buffer;
+  }
+  return buffer;
+}
 
 int
 create_sock()
@@ -129,6 +145,8 @@ main()
     local;
   socklen_t addrlen;
 
+  std::map< int, std::string > pending_data;
+
   /* Set up listening socket, 'listen_sock' (socket(),
    * bind(), listen()) */
 
@@ -160,6 +178,7 @@ main()
     }
 
     if (nfds == 0) {
+      // This is where we attempt to re-introduce a fd
       boost::mutex::scoped_lock scoped_lock(poll_mutex_);
       while (poll_queue_.size() > 0) {
 	std::cout <<
@@ -186,24 +205,31 @@ main()
 	  perror("epoll_ctl: conn_sock");
 	  exit(EXIT_FAILURE);
 	}
-      } else {
-	if (events[n].events & EPOLLIN == EPOLLIN) {
-	  std::cout << "EPOLLIN..." << std::endl;
-	  // Remove this socket from the 
-	  epoll_ctl(epollfd, EPOLL_CTL_DEL, events[n].data.fd, NULL);
-	  if (1) {
-	    boost::mutex::scoped_lock scoped_lock(mutex_);
-	    std::cout << "Adding fd to queue" << std::endl;
-	    socket_queue_.push(events[n].data.fd);
-	  }
-	  // Notify threads that there's a connection to process
+      } else {	
+	// Read whatever is in the socket, and if it's a complete line, then
+	// pass it to a worker thread to do something with it.
+	std::string some_input = read_from_socket( events[n].data.fd );
+
+	std::cout << "Read: [" << some_input << "]" << std::endl;
+
+	std::string & str_ref = pending_data[ events[n].data.fd ];
+	str_ref.append( some_input );
+	std::cout << "Data so far: [" << str_ref << "]" << std::endl;
+
+
+	if( some_input.compare("\r\n") == 0 ){
+	  std::cout << "End of data!!" << std::endl;
+	  boost::mutex::scoped_lock scoped_lock(mutex_);
+	  struct message m;
+	  m.fd = events[n].data.fd;
+	  m.msg = std::string( pending_data[ events[n].data.fd ] );
+	  message_queue_.push( m );
+
+	  // TODO: Replace with a call to erase.
+	  pending_data[ events[n].data.fd ] = "";
+	 
 	  std::cout << "Posting semaphore" << std::endl;
 	  sem_.post();
-	} else if (events[n].events & EPOLLHUP == EPOLLHUP) {
-	  std::cout << "EPOLHUP" << std::endl;
-	  std::cout << "Socket closed" << std::endl;
-	  epoll_ctl(epollfd, EPOLL_CTL_DEL, events[n].data.fd, NULL);
-	  std::cout << "Done removing fd from pool" << std::endl;
 	}
       }
     }
