@@ -216,6 +216,7 @@ main()
 	  perror("epoll_ctl: conn_sock");
 	  exit(EXIT_FAILURE);
 	}
+<<<<<<< HEAD
       } else {	
 	// Read whatever is in the socket, and if it's a complete line, then
 	// pass it to a worker thread to do something with it.
@@ -250,6 +251,25 @@ main()
 	  std::map< int, std::string >::iterator i = pending_data.find( events[n].data.fd );
 	  pending_data.erase( i );
 	 
+=======
+      } else {
+	char b;
+	if( recv( events[n].data.fd, &b, 1, MSG_PEEK | MSG_DONTWAIT) == 0 ){
+	  std::cerr << "Closing socket: " << events[n].data.fd << std::endl;
+	  close(  events[n].data.fd );
+	  epoll_ctl(epollfd, EPOLL_CTL_DEL, events[n].data.fd, NULL);
+	}
+	else if (events[n].events & EPOLLIN == EPOLLIN) {
+	  std::cout << "EPOLLIN..." << std::endl;
+	  // Remove this socket from the 
+	  epoll_ctl(epollfd, EPOLL_CTL_DEL, events[n].data.fd, NULL);
+	  if (1) {
+	    boost::mutex::scoped_lock scoped_lock(mutex_);
+	    std::cout << "Adding fd to queue" << std::endl;
+	    socket_queue_.push(events[n].data.fd);
+	  }
+	  // Notify threads that there's a connection to process
+>>>>>>> 1760a606c2903d87ddf84d4d98002e6b445d45ab
 	  std::cout << "Posting semaphore" << std::endl;
 	  sem_.post();
 	}
