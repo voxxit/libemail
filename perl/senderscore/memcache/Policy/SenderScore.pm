@@ -3,7 +3,7 @@ use strict;
 use Net::DNS;
 use Data::Dumper;
 
-our $ZONENAME = "ZONENAME-OF-YOUR-SENDERSCORE-ZONE"
+our $ZONENAME = "score.senderscore.com";
 
 sub new {
 	my ($class_name) = @_;
