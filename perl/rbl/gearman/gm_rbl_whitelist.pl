@@ -4,6 +4,7 @@ use Gearman::Client;
 use Net::CIDR::Lite;
 use Fcntl qw( SEEK_CUR SEEK_END SEEK_SET );
 use FreezeThaw qw(freeze thaw cmpStr safeFreeze cmpStrHard);
+use Sys::Syslog;
 use Data::Dumper;
 use constant BUCKETS => 50;
 
@@ -26,6 +27,8 @@ sub get_positions ( $$ ){
 
 my $input = shift || die;
 my $output = shift || die;
+
+openlog( "gm-client-rbl", "ndelay,pid", "local0" );
 
 open FD, "<$input" or die "Cannot open $input: $!\n";
 
@@ -54,7 +57,9 @@ while( scalar @positions > 1 ){
 }
 
 my $client = Gearman::Client->new;
-$client->job_servers( '127.0.0.1' );
+my @jobservers = ( '127.0.0.1' );
+syslog( "info", "Attaching to job_servers: @jobservers" );
+$client->job_servers( @jobservers );
 
 my $taskset = $client->new_task_set;
 
@@ -64,6 +69,7 @@ for( @P ){
 	my $h_ref = { startstop => $_, inputfile => $input };
 
 	my $frozen = freeze $h_ref;
+	syslog( "info", "Adding task [rbl_whitelist]" );
         $taskset->add_task( "rbl_whitelist" => $frozen, {
                 on_complete => sub { 
 			#print ${ $_[0] }, "\n" ;
@@ -75,6 +81,7 @@ for( @P ){
 $taskset->wait;
 
 # Concat all of the files
+syslog( "info", "Concatenating files to $output" );
 open FD, ">$output" || die;
 for my $input ( @completed_filenames ){
 	print "Opening $input for concatenation\n";
