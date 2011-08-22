@@ -1,0 +1,80 @@
+This is a small example of how to whitelist a DNSBL zone using MapReduce style programming techniques.
+
+It uses Perl and Gearman, and records the stats to syslog.
+
+Example:
+
+$ perl gm_rbl_whitelist.pl xbl out
+Opening /home/pblair/rbl-gearman/out.000000002369663 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000009478668 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000004739330 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000007109006 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000011848342 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000014218016 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000018957359 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000016587681 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000021327017 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000023696696 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000026066366 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000028436034 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000033175380 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000030805704 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000035545050 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000037914718 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000040284386 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000045023728 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000042654046 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000047393399 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000049763063 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000052132728 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000054502409 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000056872079 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000059241739 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000061611420 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000063981090 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000066350760 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000068720421 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000071090095 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000073459758 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000075829440 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000080568774 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000078199099 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000082938448 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000085308109 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000087677780 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000090047457 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000092417126 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000094786799 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000097156469 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000099526131 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000101895803 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000104265472 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000106635146 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000109004816 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000111374484 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000113744154 for concatenation
+Opening /home/pblair/rbl-gearman/out.000000118483526 for concatenation
+
+$ ls -lart
+total 231708
+-rw-r--r--   1 pblair pblair      2007 2011-04-25 08:22 splitter.pl
+-rw-r--r--   1 pblair pblair 118483526 2011-04-25 08:54 xbl
+-rw-r--r--   1 pblair pblair        92 2011-04-26 09:22 whitelist.cidr
+-rwxr-xr-x   1 pblair pblair      2958 2011-04-28 15:43 gm_worker_rbl_whitelist.pl
+-rw-r--r--   1 pblair pblair      2290 2011-04-28 15:49 gm_rbl_whitelist.pl
+drwxr-xr-x 236 pblair pblair     32768 2011-08-19 10:59 ..
+-rw-r--r--   1 pblair pblair 118482228 2011-08-19 11:00 out
+drwxr-xr-x   2 pblair pblair      4096 2011-08-19 11:00 .
+
+And check the syslog:
+
+$ perl -lane 'print $1 if /Job complete:\s+(\S+)/' gearman.log | perl ~/bin/stats.pl -
+Mean:     2.6589  Var:     0.1328  Std Dev:     0.3644  Trimmed mean:     2.6090
+
+$ perl -lane 'print $1 if /Job complete:\s+(\S+)/' gearman.log | wc -l
+49
+
+Which tells us that the 49 jobs tool on average 2.6 seconds to complete.  The variance was quite low, so we know that there weren't any problem nodes taking longer than expected to complete the task.
+
+In a more robust setup, the job schedule should be able to keep track of how long each job took to complete, so that it has a general idea of how long the average job takes.  Then, if there are any outlier jobs that take statically longer to complete, the job server can re-queue that job to a different job server and perhaps remove the problem job server from the worker pool.  This can arise from a particular machine in the worker pool having issues of its own, causing its worker applications to execute slowly.
+
